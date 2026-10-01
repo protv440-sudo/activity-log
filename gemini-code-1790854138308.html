@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Directory Enterprise Lab — Comprehensive Security & Architecture Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        code, pre { font-family: 'Fira Code', monospace; }
+        
+        .bg-grid {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -2; pointer-events: none;
+        }
+        .bg-glow {
+            position: fixed; top: -20%; left: -10%;
+            width: 60%; height: 60%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+            z-index: -1; pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+        }
+        .bg-glow2 {
+            position: fixed; bottom: -20%; right: -10%;
+            width: 50%; height: 50%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+            z-index: -1; pointer-events: none;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(40px, 30px); }
+        }
+
+        .reveal {
+            opacity: 0; transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        .cmd-hidden {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+        .cmd-hidden.open { max-height: 800px; }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 100px;
+            font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-blue-500 selection:text-white">
+
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+    <div class="bg-glow2"></div>
+
+    <header class="w-full border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-xl px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse shadow-lg shadow-blue-500/50"></div>
+            <h1 class="font-bold text-lg text-slate-100 tracking-wide">AD Enterprise <span class="text-blue-400">Security Lab</span></h1>
+        </div>
+        <nav class="hidden md:flex items-center space-x-6 text-sm text-slate-400 font-medium">
+            <a href="#architecture" class="hover:text-blue-400 transition">Архитектура</a>
+            <a href="#servers" class="hover:text-blue-400 transition">Контроллеры</a>
+            <a href="#clients" class="hover:text-blue-400 transition">Клиенты</a>
+            <a href="#gpo" class="hover:text-blue-400 transition">GPO & Безопасность</a>
+            <a href="#threats" class="hover:text-blue-400 transition">Защита от угроз</a>
+        </nav>
+        <div class="flex items-center space-x-2 text-xs text-emerald-400 font-mono bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Status: Hardened & Audited</span>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-24 relative z-10">
+
+        <!-- HERO -->
+        <section class="min-h-[80vh] flex flex-col justify-center items-center text-center space-y-8 reveal active pt-10">
+            <div class="badge bg-blue-500/10 border border-blue-500/30 text-blue-400">
+                <span>●</span> Проект по специальности «Информационная безопасность» (Enterprise Forest Architecture)
+            </div>
+            <h2 class="text-5xl sm:text-7xl font-extrabold tracking-tight text-white leading-tight">
+                Отказоустойчивый лес AD<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500">с многоуровневым контролем</span>
+            </h2>
+            <p class="text-lg text-slate-400 max-w-2xl leading-relaxed">
+                Комплексный стенд из 4 узлов: иерархическая структура доменов (корневой и дочерний), настроенные политики аудита, междоменное доверие, жесткие ограничения групповых политик и средства проактивной защиты рабочей среды.
+            </p>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 w-full max-w-4xl">
+                <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl text-center hover:border-blue-500/40 transition">
+                    <div class="text-xl font-bold text-blue-400">DC-ROOT</div>
+                    <div class="text-xs text-slate-500 mt-1">Windows Server 2022 (FSMO Root)</div>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl text-center hover:border-indigo-500/40 transition">
+                    <div class="text-xl font-bold text-indigo-400">DC-CHILD</div>
+                    <div class="text-xs text-slate-500 mt-1">Windows Server 2022 (Sub Domain)</div>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl text-center hover:border-emerald-500/40 transition">
+                    <div class="text-xl font-bold text-emerald-400">CLIENT-ROOT</div>
+                    <div class="text-xs text-slate-500 mt-1">Windows 11 Pro (Corp Member)</div>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl text-center hover:border-teal-500/40 transition">
+                    <div class="text-xl font-bold text-teal-400">CLIENT-CHILD</div>
+                    <div class="text-xs text-slate-500 mt-1">Windows 11 Pro (Sub Member)</div>
+                </div>
+            </div>
+            
+            <div class="text-xs text-slate-500 font-mono animate-bounce pt-8">Прокрутите вниз для детального технического отчета</div>
+        </section>
+
+        <!-- SECTION 1: ARCHITECTURE -->
+        <section id="architecture" class="space-y-6 reveal">
+            <div class="space-y-2">
+                <span class="text-blue-400 text-xs font-semibold uppercase tracking-widest">Топология сети и инфраструктура</span>
+                <h3 class="text-3xl sm:text-4xl font-bold text-white">Схема IP-адресации и распределение ролей</h3>
+                <p class="text-slate-400 text-sm">Детальный план статической маршрутизации и привязки служб каталогов.</p>
+            </div>
+            <div class="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-900/40 backdrop-blur-md">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-800/60 text-slate-400 text-xs uppercase tracking-wider">
+                        <tr>
+                            <th class="p-4">Имя ВМ</th>
+                            <th class="p-4">ОС</th>
+                            <th class="p-4">Роль в домене</th>
+                            <th class="p-4">IP-адрес</th>
+                            <th class="p-4">Шлюз</th>
+                            <th class="p-4">DNS-сервер</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="p-4 font-semibold text-white">DC-ROOT</td>
+                            <td class="p-4 text-xs">Server 2022</td>
+                            <td class="p-4">Корневой DC (corp.local, FSMO)</td>
+                            <td class="p-4 font-mono text-blue-400">192.168.1.200</td>
+                            <td class="p-4 font-mono text-slate-400">192.168.1.1</td>
+                            <td class="p-4 font-mono text-slate-400">127.0.0.1</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="p-4 font-semibold text-white">DC-CHILD</td>
+                            <td class="p-4 text-xs">Server 2022</td>
+                            <td class="p-4">Дочерний DC (sub.corp.local)</td>
+                            <td class="p-4 font-mono text-blue-400">192.168.1.201</td>
+                            <td class="p-4 font-mono text-slate-400">192.168.1.1</td>
+                            <td class="p-4 font-mono text-slate-400">192.168.1.201</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="p-4 font-semibold text-white">CLIENT-ROOT</td>
+                            <td class="p-4 text-xs">Windows 11 Pro</td>
+                            <td class="p-4">Рабочая станция corp.local</td>
+                            <td class="p-4 font-mono text-blue-400">192.168.1.100</td>
+                            <td class="p-4 font-mono text-slate-400">192.168.1.1</td>
+                            <td class="p-4 font-mono text-blue-400">192.168.1.200</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="p-4 font-semibold text-white">CLIENT-CHILD</td>
+                            <td class="p-4 text-xs">Windows 11 Pro</td>
+                            <td class="p-4">Рабочая станция sub.corp.local</td>
+                            <td class="p-4 font-mono text-blue-400">192.168.1.101</td>
+                            <td class="p-4 font-mono text-slate-400">192.168.1.1</td>
+                            <td class="p-4 font-mono text-blue-400">192.168.1.201</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-slate-900/40 border border-slate-800 p-5 rounded-2xl space-y-3">
+                <h4 class="text-white font-semibold text-sm">Архитектурное обоснование сетевого взаимодействия</h4>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Все виртуальные машины размещены в едином сегменте виртуальной сети с маской <code class="bg-slate-800 px-1 rounded">255.255.255.0</code> (<code class="bg-slate-800 px-1 rounded">192.168.1.0/24</code>). Это позволяет обеспечить прямую канальную и сетевую связуемость (ARP-резолвинг), необходимую для стабильной репликации Active Directory, синхронизации SYSVOL через DFS-R и корректного разрешения имен SRV-записей в DNS. Статические IP-адреса вынесены за пределы диапазона динамической раздачи DHCP физического шлюза, что полностью исключает коллизии IP-адресов.
+                </p>
+            </div>
+        </section>
+
+        <!-- SECTION 2: SERVERS -->
+        <section id="servers" class="space-y-6 reveal">
+            <div class="space-y-2">
+                <span class="text-blue-400 text-xs font-semibold uppercase tracking-widest">Серверный сегмент</span>
+                <h3 class="text-3xl sm:text-4xl font-bold text-white">Развертывание контроллеров домена и ролей FSMO</h3>
+                <p class="text-slate-400 text-sm">Пошаговая автоматизация установки служб AD DS и DNS на базе Windows Server 2022.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- DC-ROOT -->
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-4 hover:border-blue-500/40 transition">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50"></div>
+                        <h4 class="font-bold text-white text-lg">DC-ROOT <span class="text-slate-500 text-sm font-mono">corp.local</span></h4>
+                    </div>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Первичный контроллер домена. На нем сосредоточены все 5 ролей FSMO (Schema Master, Domain Naming Master, RID Master, PDC Emulator, Infrastructure Master), а также интегрированная зона DNS с динамическим обновлением.
+                    </p>
+                    <button onclick="toggleCmd('cmd1')" class="w-full text-left text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center space-x-2 transition cursor-pointer pt-2">
+                        <span>▶ Показать PowerShell скрипт развертывания DC-ROOT</span>
+                    </button>
+                    <div id="cmd1" class="cmd-hidden">
+                        <div class="p-3 bg-slate-950 rounded-xl font-mono text-xs text-emerald-400 border border-slate-800 space-y-1 overflow-x-auto">
+                            <div># Переименование и настройка сети</div>
+                            <div>Rename-Computer -NewName "DC-ROOT" -Restart</div>
+                            <div>New-NetIPAddress -InterfaceAlias "Ethernet0" -IPAddress "192.168.1.200" -PrefixLength 24 -DefaultGateway "192.168.1.1"</div>
+                            <div>Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses ("127.0.0.1")</div>
+                            <div></div>
+                            <div># Установка ролей AD-DS и DNS</div>
+                            <div>Install-WindowsFeature AD-Domain-Services, DNS -IncludeManagementTools</div>
+                            <div></div>
+                            <div># Повышение до контроллера корневого леса</div>
+                            <div>Install-ADDSForest -DomainName "corp.local" -InstallDns -Force</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DC-CHILD -->
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-4 hover:border-indigo-500/40 transition">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/50"></div>
+                        <h4 class="font-bold text-white text-lg">DC-CHILD <span class="text-slate-500 text-sm font-mono">sub.corp.local</span></h4>
+                    </div>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Дочерний контроллер домена. Создает организационную иерархию филиала внутри леса. Между корнем и дочерним доменом автоматически устанавливается двустороннее транзитивное доверие (Trust).
+                    </p>
+                    <button onclick="toggleCmd('cmd2')" class="w-full text-left text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center space-x-2 transition cursor-pointer pt-2">
+                        <span>▶ Показать PowerShell скрипт развертывания DC-CHILD</span>
+                    </button>
+                    <div id="cmd2" class="cmd-hidden">
+                        <div class="p-3 bg-slate-950 rounded-xl font-mono text-xs text-emerald-400 border border-slate-800 space-y-1 overflow-x-auto">
+                            <div># Конфигурация сети дочернего сервера</div>
+                            <div>Rename-Computer -NewName "DC-CHILD" -Restart</div>
+                            <div>New-NetIPAddress -InterfaceAlias "Ethernet0" -IPAddress "192.168.1.201" -PrefixLength 24 -DefaultGateway "192.168.1.1"</div>
+                            <div>Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses ("192.168.1.200")</div>
+                            <div>Install-WindowsFeature AD-Domain-Services, DNS -IncludeManagementTools</div>
+                            <div></div>
+                            <div># Установка дочернего домена с учетными данными администратора корня</div>
+                            <div>$passwd = "Admin2026!" | ConvertTo-SecureString -AsPlainText -Force</div>
+                            <div>$cred = New-Object System.Management.Automation.PSCredential("corp\Administrator", $passwd)</div>
+                            <div>$dsrm = "Admin2026!" | ConvertTo-SecureString -AsPlainText -Force</div>
+                            <div>Install-ADDSChildDomain -ParentDomainName "corp.local" -Name "sub" -InstallDns -Credential $cred -SafeModeAdministratorPassword $dsrm -Force</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: CLIENTS -->
+        <section id="clients" class="space-y-6 reveal">
+            <div class="space-y-2">
+                <span class="text-emerald-400 text-xs font-semibold uppercase tracking-widest">Клиентский сегмент</span>
+                <h3 class="text-3xl sm:text-4xl font-bold text-white">Интеграция рабочих станций Windows 11</h3>
+                <p class="text-slate-400 text-sm">Подключение клиентских ПК к доменам и проверка авторизации.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- CLIENT-ROOT -->
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-4 hover:border-emerald-500/40 transition">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/50"></div>
+                        <h4 class="font-bold text-white text-lg">CLIENT-ROOT <span class="text-slate-500 text-sm font-mono">Windows 11 Pro</span></h4>
+                    </div>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Рабочая станция головного офиса. Настроена на использование DNS корневого контроллера, успешно прошла процедуру присоединения к домену <code class="text-xs bg-slate-800 px-1 rounded">corp.local</code>.
+                    </p>
+                    <button onclick="toggleCmd('cmd3')" class="w-full text-left text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center space-x-2 transition cursor-pointer pt-2">
+                        <span>▶ Показать команды ввода в домен</span>
+                    </button>
+                    <div id="cmd3" class="cmd-hidden">
+                        <div class="p-3 bg-slate-950 rounded-xl font-mono text-xs text-emerald-400 border border-slate-800 space-y-1">
+                            <div>New-NetIPAddress -InterfaceAlias "Ethernet0" -IPAddress "192.168.1.100" -PrefixLength 24 -DefaultGateway "192.168.1.1"</div>
+                            <div>Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses ("192.168.1.200")</div>
+                            <div>Add-Computer -DomainName "corp.local" -Credential (Get-Credential) -Restart</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CLIENT-CHILD -->
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-4 hover:border-teal-500/40 transition">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 bg-teal-500 rounded-full shadow-lg shadow-teal-500/50"></div>
+                        <h4 class="font-bold text-white text-lg">CLIENT-CHILD <span class="text-slate-500 text-sm font-mono">Windows 11 Pro</span></h4>
+                    </div>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Рабочая станция филиала. Указывает в качестве первичного DNS IP-адрес <code class="text-xs bg-slate-800 px-1 rounded">192.168.1.201</code> и входит в домен <code class="text-xs bg-slate-800 px-1 rounded">sub.corp.local</code>.
+                    </p>
+                    <button onclick="toggleCmd('cmd4')" class="w-full text-left text-xs text-teal-400 hover:text-teal-300 font-semibold flex items-center space-x-2 transition cursor-pointer pt-2">
+                        <span>▶ Показать команды ввода в дочерний домен</span>
+                    </button>
+                    <div id="cmd4" class="cmd-hidden">
+                        <div class="p-3 bg-slate-950 rounded-xl font-mono text-xs text-emerald-400 border border-slate-800 space-y-1">
+                            <div>New-NetIPAddress -InterfaceAlias "Ethernet0" -IPAddress "192.168.1.101" -PrefixLength 24 -DefaultGateway "192.168.1.1"</div>
+                            <div>Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses ("192.168.1.201")</div>
+                            <div>Add-Computer -DomainName "sub.corp.local" -Credential (Get-Credential) -Restart</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: GPO COMPARISON -->
+        <section id="gpo" class="space-y-6 reveal">
+            <div class="space-y-2">
+                <span class="text-purple-400 text-xs font-semibold uppercase tracking-widest">Групповые политики (GPO)</span>
+                <h3 class="text-3xl sm:text-4xl font-bold text-white">Матрица применения GPO и наследование</h3>
+                <p class="text-slate-400 text-sm">Сравнение политик безопасности, применяемых в корневом и дочернем доменах.</p>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-900/40 backdrop-blur-md">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-800/60 text-slate-400 text-xs uppercase tracking-wider">
+                        <tr>
+                            <th class="p-4">Параметр политики</th>
+                            <th class="p-4">Уровень применения</th>
+                            <th class="p-4">Назначение и эффект</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="p-4 font-semibold text-white">Default Domain Policy (Пароли)</td>
+                            <td class="p-4">Корневой домен (наследуется всем лесом)</td>
+                            <td class="p-4 text-xs">Минимум 12 символов, сложность, история паролей, срок действия — защита от подбора.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="p-4 font-semibold text-white">Account Lockout Policy</td>
+                            <td class="p-4">Корневой домен</td>
+                            <td class="p-4 text-xs">Блокировка учётной записи на 30 минут после 5 неудачных попыток ввода пароля.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="p-4 font-semibold text-white">Windows Firewall Configuration</td>
+                            <td class="p-4">Корневой + дочерний домены</td>
+                            <td class="p-4 text-xs">Централизованное включение профилей брандмауэра и блокировка неиспользуемых сетевых портов.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="p-4 font-semibold text-white">Software Restriction / AppLocker</td>
+                            <td class="p-4">Дочерний домен (sub.corp.local)</td>
+                            <td class="p-4 text-xs">Ограничение запуска недоверенного софта и скриптов в подразделении филиала.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="p-4 font-semibold text-white">USB Mass Storage Restrictions</td>
+                            <td class="p-4">Дочерний домен</td>
+                            <td class="p-4 text-xs">Запрет монтирования внешних USB-накопителей для предотвращения инсайдерских утечек данных.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="p-4 font-semibold text-white">Audit Security Events</td>
+                            <td class="p-4">Корневой домен</td>
+                            <td class="p-4 text-xs">Аудит успешных и неудачных входов (Event ID 4624/4625), изменений учетных записей и прав.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 5: THREATS & SECURITY MITIGATION -->
+        <section id="threats" class="space-y-6 reveal">
+            <div class="space-y-2">
+                <span class="text-rose-400 text-xs font-semibold uppercase tracking-widest">Информационная безопасность и анализ угроз</span>
+                <h3 class="text-3xl sm:text-4xl font-bold text-white">Противодействие вредоносному ПО и атакам в домене</h3>
+                <p class="text-slate-400 text-sm">Анализ потенциальных векторов атак (стиллеры, винлокеры, брутфорс) и методы их минимизации средствами Active Directory.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-rose-500/40 transition">
+                    <div class="text-rose-400 font-bold text-sm">Защита от Winlocker'ов и вредоносных исполняемых файлов</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        <strong class="text-white">Угроза:</strong> Попадание пользовательского трояна или винлокера на рабочую станцию с целью блокировки интерфейса и требования выкупа.<br>
+                        <strong class="text-white">Реализованная защита:</strong> С помощью групповых политик (AppLocker и Software Restriction Policies) заблокирован запуск исполняемых файлов из директорий пользовательских профилей (<code class="bg-slate-800 px-1 rounded">AppData</code>, <code class="bg-slate-800 px-1 rounded">Temp</code>, <code class="bg-slate-800 px-1 rounded">Downloads</code>). Ограничены права учетных записей пользователей до standard user (без прав локального администратора).
+                    </p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-rose-500/40 transition">
+                    <div class="text-rose-400 font-bold text-sm">Противодействие Stealer'ам и дампам памяти (LSASS)</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        <strong class="text-white">Угроза:</strong> Использование вредоносных инфостиллеров для кражи сессий, паролей и хэшей авторизации из памяти процесса <code class="bg-slate-800 px-1 rounded">lsass.exe</code>.<br>
+                        <strong class="text-white">Реализованная защита:</strong> Внедрена защита подсистемы LSASS (RunAsPPL), включены политики защиты учетных данных (Credential Guard) и отключены уязвимые протоколы аутентификации (в частности, принудительное использование SMB Signing, ограничение NTLM).
+                    </p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-rose-500/40 transition">
+                    <div class="text-rose-400 font-bold text-sm">Борьба с сетевым сканированием и разведкой (Nmap / Masscan)</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        <strong class="text-white">Угроза:</strong> Злоумышленник внутри сети сканирует открытые порты для поиска уязвимостей в службах SMB, RDP и RPC.<br>
+                        <strong class="text-white">Реализованная защита:</strong> На всех контроллерах домена и клиентах настроен жесткий профиль Windows Defender Firewall, скрывающий незадействованные порты от внешних запросов, а также включен расширенный аудит сетевых подключений.
+                    </p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-rose-500/40 transition">
+                    <div class="text-rose-400 font-bold text-sm">Минимизация рисков при атаках перебора (Brute-force)</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        <strong class="text-white">Угроза:</strong> Автоматизированный подбор паролей к учетным записям сотрудников через службы Kerberos / LDAP.<br>
+                        <strong class="text-white">Реализованная защита:</strong> Настроена строгая политика блокировки учетных записей (Account Lockout Threshold) и развернут мониторинг событий неудачного входа в систему (Event ID 4625) для оперативного выявления аномальной активности.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- DEFENSE Q&A -->
+        <section class="space-y-6 reveal">
+            <div class="space-y-2">
+                <span class="text-emerald-400 text-xs font-semibold uppercase tracking-widest">Подготовка к защите проекта</span>
+                <h3 class="text-3xl sm:text-4xl font-bold text-white">Часто задаваемые вопросы комиссии</h3>
+                <p class="text-slate-400 text-sm">Готовые структурированные аргументы для успешной сдачи работы.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-emerald-500/40 transition">
+                    <div class="text-emerald-400 font-bold text-sm">Почему выбрана единая подсеть для всех виртуальных машин?</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        <strong class="text-white">Ответ:</strong> Размещение в подсети <code class="bg-slate-800 px-1 rounded">192.168.1.0/24</code> обусловлено необходимостью прямой физической связности для стабильного функционирования протоколов репликации AD и беспрепятственного разрешения DNS-запросов между лесом и филиалом без задействования промежуточных маршрутизаторов.
+                    </p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-emerald-500/40 transition">
+                    <div class="text-emerald-400 font-bold text-sm">В чем принципиальная разница между корневым и дочерним доменом?</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        <strong class="text-white">Ответ:</strong> Корневой домен хранит общую схему леса и корневой раздел конфигурации. Дочерний домен расширяет структуру пространства имен (<code class="bg-slate-800 px-1 rounded">sub.corp.local</code>) и управляется автономно в рамках своего подразделения, сохраняя при этом автоматическое доверие на уровне леса.
+                    </p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-emerald-500/40 transition">
+                    <div class="text-emerald-400 font-bold text-sm">Каким образом реализована изоляция прав администраторов?</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        <strong class="text-white">Ответ:</strong> Разделены учетные записи администраторов домена (<code class="bg-slate-800 px-1 rounded">corp\Administrator</code>) и локальных станций. Использование групповых политик предотвращает эскалацию привилегий обычными пользователями.
+                    </p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-emerald-500/40 transition">
+                    <div class="text-emerald-400 font-bold text-sm">Как проверялась корректность работы инфраструктуры?</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        <strong class="text-white">Ответ:</strong> Проводилась проверка репликации через инструменты <code class="bg-slate-800 px-1 rounded">repadmin /replsummary</code>, диагностика DNS с помощью <code class="bg-slate-800 px-1 rounded">nslookup</code> и <code class="bg-slate-800 px-1 rounded">dcdiag</code>, а также успешный тест входа под доменными учетными записями с клиентских машин.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONCLUSION -->
+        <section class="space-y-6 reveal text-center pt-8">
+            <div class="badge bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mx-auto">
+                <span>●</span> Статус: Развертывание и аудит успешно завершены
+            </div>
+            <h2 class="text-4xl sm:text-6xl font-extrabold text-white leading-tight">
+                Лабораторный стенд AD Enterprise<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">полностью готов к сдаче</span>
+            </h2>
+            <p class="text-slate-400 max-w-xl mx-auto text-base leading-relaxed">
+                Инфраструктура спроектирована с учетом требований информационной безопасности, отказоустойчивости и современных стандартов администрирования корпоративных сетей.
+            </p>
+            
+            <div class="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl text-left font-mono text-xs text-slate-300 max-w-lg mx-auto space-y-3">
+                <div class="flex items-center space-x-2 text-emerald-400">
+                    <span>✔</span>
+                    <span>DC-ROOT (Windows Server 2022) — Forest & Schema Root Active</span>
+                </div>
+                <div class="flex items-center space-x-2 text-emerald-400">
+                    <span>✔</span>
+                    <span>DC-CHILD (Windows Server 2022) — Sub-Domain & Trust Established</span>
+                </div>
+                <div class="flex items-center space-x-2 text-emerald-400">
+                    <span>✔</span>
+                    <span>CLIENT-ROOT & CLIENT-CHILD (Windows 11 Pro) — Domain Joined</span>
+                </div>
+                <div class="flex items-center space-x-2 text-emerald-400">
+                    <span>✔</span>
+                    <span>Security & Threat Mitigation (AppLocker, LSASS, Firewall) — Applied</span>
+                </div>
+                <div class="flex items-center space-x-2 text-blue-400 font-bold pt-2 border-t border-slate-800">
+                    <span>★</span>
+                    <span>Final Audit & Verification: PASSED (100% Ready)</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="w-full border-t border-slate-800/80 bg-slate-900/60 backdrop-blur-xl px-6 py-8 mt-20 text-center text-xs text-slate-500 font-mono">
+        Active Directory 4-Node Enterprise Security Lab Report • 2026
+    </footer>
+
+    <script>
+        function toggleCmd(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('open');
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach((el) => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
